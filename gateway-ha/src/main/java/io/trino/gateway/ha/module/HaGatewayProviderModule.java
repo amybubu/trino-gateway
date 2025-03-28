@@ -41,6 +41,7 @@ import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProv
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import io.trino.gateway.ha.persistence.dao.GatewayBackend;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.GatewayBackendManager;
@@ -64,6 +65,8 @@ import io.trino.gateway.ha.security.util.Authorizer;
 import io.trino.gateway.ha.security.util.ChainedAuthFilter;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
+import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
 import java.util.List;
 import java.util.Map;
@@ -105,6 +108,8 @@ public class HaGatewayProviderModule
         backendStateConnectionManager = new BackendStateManager();
 
         Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
+        jdbi.installPlugin(new SqlObjectPlugin());
+        jdbi.registerRowMapper(ConstructorMapper.factory(GatewayBackend.class));
         HaGatewayManager haGatewayManager = new HaGatewayManager(jdbi);
         gatewayBackendManager = haGatewayManager;
         clusterActivationStats =

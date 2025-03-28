@@ -110,7 +110,9 @@ public class HaGatewayManager
         String backendProxyTo = removeTrailingSlash(backend.getProxyTo());
         String backendExternalUrl = removeTrailingSlash(backend.getExternalUrl());
         dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
-        clusterActivationStats.initActivationStatusMetricByCluster(backend.getName());
+        if (clusterActivationStats != null) {
+            clusterActivationStats.initActivationStatusMetricByCluster(backend.getName());
+        }
         return backend;
     }
 
@@ -122,7 +124,9 @@ public class HaGatewayManager
         GatewayBackend model = dao.findFirstByName(backend.getName());
         if (model == null) {
             dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
-            clusterActivationStats.initActivationStatusMetricByCluster(backend.getName());
+            if (clusterActivationStats != null) {
+                clusterActivationStats.initActivationStatusMetricByCluster(backend.getName());
+            }
         }
         else {
             dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
