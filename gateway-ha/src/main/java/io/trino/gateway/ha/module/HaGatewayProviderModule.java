@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.airlift.http.client.HttpClient;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterActivationStats;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
@@ -85,8 +86,10 @@ public class HaGatewayProviderModule
     private final BackendStateManager backendStateConnectionManager;
     private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
     private final HaGatewayConfiguration configuration;
-    private final GatewayBackendManager gatewayBackendManager;
-    private final ClusterActivationStats clusterActivationStats;
+    private GatewayBackendManager gatewayBackendManager;
+    //private final ClusterActivationStats clusterActivationStats;
+    private ClusterActivationStats clusterActivationStats;
+    private static final Logger log = Logger.get(HaGatewayManager.class);
 
     @Override
     protected void configure()
@@ -115,6 +118,7 @@ public class HaGatewayProviderModule
         clusterActivationStats =
                 new ClusterActivationStats(gatewayBackendManager);
         haGatewayManager.setClusterActivationStats(clusterActivationStats);
+        log.info("AMY LOG: clusterActivationStats = %s", clusterActivationStats);
         clusterActivationStats.initActivationStatusMetrics();
 
         GatewayCookieConfigurationPropertiesProvider gatewayCookieConfigurationPropertiesProvider = GatewayCookieConfigurationPropertiesProvider.getInstance();

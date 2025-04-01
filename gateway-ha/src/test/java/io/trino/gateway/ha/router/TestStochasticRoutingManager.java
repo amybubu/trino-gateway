@@ -24,8 +24,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
-
+import static org.mockito.Mockito.mock;
 
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestStochasticRoutingManager

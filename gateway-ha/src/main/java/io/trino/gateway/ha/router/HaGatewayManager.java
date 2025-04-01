@@ -42,6 +42,8 @@ public class HaGatewayManager
 
     public void setClusterActivationStats(ClusterActivationStats clusterActivationStats)
     {
+        System.out.println("INSIDE setClusterActivationStats");
+        log.info("AMY LOG setClusterActivationStats clusterActivationStats: %s", clusterActivationStats);
         this.clusterActivationStats = clusterActivationStats;
     }
 
@@ -90,6 +92,7 @@ public class HaGatewayManager
     public void deactivateBackend(String backendName)
     {
         Boolean prevStatus = dao.findFirstByName(backendName).active();
+        System.out.println("INSIDE deactivateBackend");
         dao.deactivate(backendName);
         log.info("Backend cluster %s has been deactivated (previous status: active=%s).",
                 backendName, prevStatus);
@@ -99,6 +102,7 @@ public class HaGatewayManager
     public void activateBackend(String backendName)
     {
         Boolean prevStatus = dao.findFirstByName(backendName).active();
+        System.out.println("INSIDE activateBackend");
         dao.activate(backendName);
         log.info("Backend cluster %s has been activated (previous status: active=%s).",
                 backendName, prevStatus);
@@ -107,9 +111,12 @@ public class HaGatewayManager
     @Override
     public ProxyBackendConfiguration addBackend(ProxyBackendConfiguration backend)
     {
+        System.out.println("AMY LOG: INSIDE addBackend");
+        System.out.println("INSIDE addBackend");
         String backendProxyTo = removeTrailingSlash(backend.getProxyTo());
         String backendExternalUrl = removeTrailingSlash(backend.getExternalUrl());
         dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
+        log.info("AMY ADD clusterActivationStats = %s", clusterActivationStats);
         if (clusterActivationStats != null) {
             clusterActivationStats.initActivationStatusMetricByCluster(backend.getName());
         }
@@ -119,17 +126,24 @@ public class HaGatewayManager
     @Override
     public ProxyBackendConfiguration updateBackend(ProxyBackendConfiguration backend)
     {
+        System.out.println("INSIDE updateBackend");
+        log.info("AMY LOG: INSIDE updateBackend");
         String backendProxyTo = removeTrailingSlash(backend.getProxyTo());
         String backendExternalUrl = removeTrailingSlash(backend.getExternalUrl());
         GatewayBackend model = dao.findFirstByName(backend.getName());
         if (model == null) {
             dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
+            log.info("AMY UPDATE model null clusterActivationStats = %s", clusterActivationStats);
             if (clusterActivationStats != null) {
                 clusterActivationStats.initActivationStatusMetricByCluster(backend.getName());
             }
         }
         else {
             dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
+            log.info("AMY UPDATE clusterActivationStats = %s", clusterActivationStats);
+            if (clusterActivationStats != null) {
+                clusterActivationStats.initActivationStatusMetricByCluster(backend.getName());
+            }
         }
         return backend;
     }
