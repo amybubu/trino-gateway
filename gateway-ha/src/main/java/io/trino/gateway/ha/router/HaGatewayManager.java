@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterActivationStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -33,19 +34,18 @@ public class HaGatewayManager
     private static final Logger log = Logger.get(HaGatewayManager.class);
 
     private final GatewayBackendDao dao;
-    private ClusterActivationStats clusterActivationStats;
 
     public HaGatewayManager(Jdbi jdbi)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(GatewayBackendDao.class);
     }
 
-    public void setClusterActivationStats(ClusterActivationStats clusterActivationStats)
-    {
-        System.out.println("INSIDE setClusterActivationStats");
-        log.info("AMY LOG setClusterActivationStats clusterActivationStats: %s", clusterActivationStats);
-        this.clusterActivationStats = clusterActivationStats;
-    }
+//    public void setClusterActivationStats(ClusterActivationStats clusterActivationStats)
+//    {
+//        System.out.println("INSIDE setClusterActivationStats");
+//        log.info("AMY LOG setClusterActivationStats clusterActivationStats: %s", clusterActivationStats);
+//        this.clusterActivationStats = clusterActivationStats;
+//    }
 
     @Override
     public List<ProxyBackendConfiguration> getAllBackends()

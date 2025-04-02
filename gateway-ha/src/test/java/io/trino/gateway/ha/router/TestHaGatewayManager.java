@@ -35,8 +35,8 @@ final class TestHaGatewayManager
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         haGatewayManager = new HaGatewayManager(connectionManager.getJdbi());
-        ClusterActivationStats mockStats = mock(ClusterActivationStats.class);
-        haGatewayManager.setClusterActivationStats(mockStats);
+        //ClusterActivationStats mockStats = mock(ClusterActivationStats.class);
+        //haGatewayManager.setClusterActivationStats(mockStats);
     }
 
     @Test

@@ -38,8 +38,8 @@ final class TestStochasticRoutingManager
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         backendManager = new HaGatewayManager(connectionManager.getJdbi());
-        ClusterActivationStats mockStats = mock(ClusterActivationStats.class);
-        ((HaGatewayManager) backendManager).setClusterActivationStats(mockStats);
+        //ClusterActivationStats mockStats = mock(ClusterActivationStats.class);
+        //((HaGatewayManager) backendManager).setClusterActivationStats(mockStats);
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), false);
         haRoutingManager = new StochasticRoutingManager(backendManager, historyManager);
     }

@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.clustermonitor;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+@Singleton
 public class ClusterActivationStats
 {
     private final GatewayBackendManager gatewayBackendManager;
@@ -36,6 +38,7 @@ public class ClusterActivationStats
     public ClusterActivationStats(GatewayBackendManager gatewayBackendManager)
     {
         this.gatewayBackendManager = gatewayBackendManager;
+        initActivationStatusMetrics();
     }
 
 //    public void initActivationStatusMetrics()

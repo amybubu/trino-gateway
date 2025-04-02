@@ -86,10 +86,10 @@ public class HaGatewayProviderModule
     private final BackendStateManager backendStateConnectionManager;
     private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
     private final HaGatewayConfiguration configuration;
-    private GatewayBackendManager gatewayBackendManager;
+    //private GatewayBackendManager gatewayBackendManager;
     //private final ClusterActivationStats clusterActivationStats;
-    private ClusterActivationStats clusterActivationStats;
-    private static final Logger log = Logger.get(HaGatewayManager.class);
+    //private ClusterActivationStats clusterActivationStats;
+    //private static final Logger log = Logger.get(HaGatewayManager.class);
 
     @Override
     protected void configure()
@@ -110,16 +110,16 @@ public class HaGatewayProviderModule
         resourceSecurityDynamicFeature = getAuthFilter(configuration);
         backendStateConnectionManager = new BackendStateManager();
 
-        Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
-        jdbi.installPlugin(new SqlObjectPlugin());
-        jdbi.registerRowMapper(ConstructorMapper.factory(GatewayBackend.class));
-        HaGatewayManager haGatewayManager = new HaGatewayManager(jdbi);
-        gatewayBackendManager = haGatewayManager;
-        clusterActivationStats =
-                new ClusterActivationStats(gatewayBackendManager);
-        haGatewayManager.setClusterActivationStats(clusterActivationStats);
-        log.info("AMY LOG: clusterActivationStats = %s", clusterActivationStats);
-        clusterActivationStats.initActivationStatusMetrics();
+//        Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
+//        jdbi.installPlugin(new SqlObjectPlugin());
+//        jdbi.registerRowMapper(ConstructorMapper.factory(GatewayBackend.class));
+//        HaGatewayManager haGatewayManager = new HaGatewayManager(jdbi);
+//        gatewayBackendManager = haGatewayManager;
+//        clusterActivationStats =
+//                new ClusterActivationStats(gatewayBackendManager);
+//        haGatewayManager.setClusterActivationStats(clusterActivationStats);
+//        log.info("AMY LOG: clusterActivationStats = %s", clusterActivationStats);
+//        clusterActivationStats.initActivationStatusMetrics();
 
         GatewayCookieConfigurationPropertiesProvider gatewayCookieConfigurationPropertiesProvider = GatewayCookieConfigurationPropertiesProvider.getInstance();
         gatewayCookieConfigurationPropertiesProvider.initialize(configuration.getGatewayCookieConfiguration());
