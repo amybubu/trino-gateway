@@ -38,7 +38,6 @@ public class ClusterActivationStats
     public ClusterActivationStats(GatewayBackendManager gatewayBackendManager)
     {
         this.gatewayBackendManager = gatewayBackendManager;
-        initActivationStatusMetrics();
     }
 
 //    public void initActivationStatusMetrics()

@@ -16,6 +16,7 @@ package io.trino.gateway.ha;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Injector;
 import com.google.inject.Module;
 import io.airlift.bootstrap.ApplicationConfigurationException;
 import io.airlift.bootstrap.Bootstrap;
@@ -31,6 +32,7 @@ import io.airlift.openmetrics.JmxOpenMetricsModule;
 import io.airlift.tracing.TracingModule;
 import io.airlift.units.Duration;
 import io.trino.gateway.baseapp.BaseApp;
+import io.trino.gateway.ha.clustermonitor.ClusterActivationStats;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.module.HaGatewayProviderModule;
 import io.trino.gateway.ha.persistence.FlywayMigration;
@@ -48,6 +50,7 @@ import static java.util.Objects.requireNonNullElse;
 public class HaGatewayLauncher
 {
     private static final Logger logger = Logger.get(HaGatewayLauncher.class);
+    private static ClusterActivationStats clusterActivationStats;
 
     private void start(List<Module> additionalModules, HaGatewayConfiguration configuration)
     {
@@ -73,7 +76,8 @@ public class HaGatewayLauncher
         Bootstrap app = new Bootstrap(modules.build())
                 .setRequiredConfigurationProperties(configuration.getServerConfig());
         try {
-            app.initialize();
+            Injector injector = app.initialize();
+            clusterActivationStats = injector.getInstance(ClusterActivationStats.class);
         }
         catch (ApplicationConfigurationException e) {
             StringBuilder message = new StringBuilder();
@@ -117,5 +121,6 @@ public class HaGatewayLauncher
         FlywayMigration.migrate(haGatewayConfiguration.getDataStore());
         List<Module> modules = addModules(haGatewayConfiguration);
         new HaGatewayLauncher().start(modules, haGatewayConfiguration);
+        clusterActivationStats.initActivationStatusMetrics();
     }
 }

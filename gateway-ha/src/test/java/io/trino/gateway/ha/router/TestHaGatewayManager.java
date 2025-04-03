@@ -13,7 +13,6 @@
  */
 package io.trino.gateway.ha.router;
 
-import io.trino.gateway.ha.clustermonitor.ClusterActivationStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,7 +22,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestHaGatewayManager
@@ -35,8 +33,6 @@ final class TestHaGatewayManager
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         haGatewayManager = new HaGatewayManager(connectionManager.getJdbi());
-        //ClusterActivationStats mockStats = mock(ClusterActivationStats.class);
-        //haGatewayManager.setClusterActivationStats(mockStats);
     }
 
     @Test

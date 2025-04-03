@@ -19,8 +19,6 @@ import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.airlift.http.client.HttpClient;
-import io.airlift.log.Logger;
-import io.trino.gateway.ha.clustermonitor.ClusterActivationStats;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
@@ -42,11 +40,8 @@ import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProv
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
-import io.trino.gateway.ha.persistence.dao.GatewayBackend;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.ForRouter;
-import io.trino.gateway.ha.router.GatewayBackendManager;
-import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.security.ApiAuthenticator;
@@ -65,9 +60,6 @@ import io.trino.gateway.ha.security.ResourceSecurityDynamicFeature;
 import io.trino.gateway.ha.security.util.Authorizer;
 import io.trino.gateway.ha.security.util.ChainedAuthFilter;
 import jakarta.ws.rs.container.ContainerRequestFilter;
-import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
-import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
 import java.util.List;
 import java.util.Map;
@@ -86,10 +78,6 @@ public class HaGatewayProviderModule
     private final BackendStateManager backendStateConnectionManager;
     private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
     private final HaGatewayConfiguration configuration;
-    //private GatewayBackendManager gatewayBackendManager;
-    //private final ClusterActivationStats clusterActivationStats;
-    //private ClusterActivationStats clusterActivationStats;
-    //private static final Logger log = Logger.get(HaGatewayManager.class);
 
     @Override
     protected void configure()
@@ -109,17 +97,6 @@ public class HaGatewayProviderModule
         authorizationManager = new AuthorizationManager(configuration.getAuthorization(), presetUsers);
         resourceSecurityDynamicFeature = getAuthFilter(configuration);
         backendStateConnectionManager = new BackendStateManager();
-
-//        Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
-//        jdbi.installPlugin(new SqlObjectPlugin());
-//        jdbi.registerRowMapper(ConstructorMapper.factory(GatewayBackend.class));
-//        HaGatewayManager haGatewayManager = new HaGatewayManager(jdbi);
-//        gatewayBackendManager = haGatewayManager;
-//        clusterActivationStats =
-//                new ClusterActivationStats(gatewayBackendManager);
-//        haGatewayManager.setClusterActivationStats(clusterActivationStats);
-//        log.info("AMY LOG: clusterActivationStats = %s", clusterActivationStats);
-//        clusterActivationStats.initActivationStatusMetrics();
 
         GatewayCookieConfigurationPropertiesProvider gatewayCookieConfigurationPropertiesProvider = GatewayCookieConfigurationPropertiesProvider.getInstance();
         gatewayCookieConfigurationPropertiesProvider.initialize(configuration.getGatewayCookieConfiguration());
