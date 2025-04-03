@@ -14,8 +14,6 @@
 package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
-import io.airlift.log.Logger;
-import io.trino.gateway.ha.clustermonitor.ClusterActivationStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
@@ -34,14 +32,11 @@ import static java.util.Objects.requireNonNull;
 public class HaGatewayResource
 {
     private final GatewayBackendManager haGatewayManager;
-    private static final Logger log = Logger.get(HaGatewayResource.class);
-    private static ClusterActivationStats clusterActivationStats;
 
     @Inject
-    public HaGatewayResource(GatewayBackendManager haGatewayManager, ClusterActivationStats clusterActivationStats)
+    public HaGatewayResource(GatewayBackendManager haGatewayManager)
     {
         this.haGatewayManager = requireNonNull(haGatewayManager, "haGatewayManager is null");
-        this.clusterActivationStats = requireNonNull(clusterActivationStats, "clusterActivationStats is null");
     }
 
     @Path("/add")
@@ -49,10 +44,6 @@ public class HaGatewayResource
     public Response addBackend(ProxyBackendConfiguration backend)
     {
         ProxyBackendConfiguration updatedBackend = haGatewayManager.addBackend(backend);
-        log.info("AMY ADD clusterActivationStats = %s", clusterActivationStats);
-        if (clusterActivationStats != null) {
-            clusterActivationStats.initActivationStatusMetricByCluster(backend.getName());
-        }
         return Response.ok(updatedBackend).build();
     }
 
@@ -61,10 +52,6 @@ public class HaGatewayResource
     public Response updateBackend(ProxyBackendConfiguration backend)
     {
         ProxyBackendConfiguration updatedBackend = haGatewayManager.updateBackend(backend);
-        log.info("AMY UPDATE clusterActivationStats = %s", clusterActivationStats);
-        if (clusterActivationStats != null) {
-            clusterActivationStats.initActivationStatusMetricByCluster(backend.getName());
-        }
         return Response.ok(updatedBackend).build();
     }
 

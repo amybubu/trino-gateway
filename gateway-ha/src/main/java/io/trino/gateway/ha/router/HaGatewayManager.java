@@ -116,7 +116,13 @@ public class HaGatewayManager
             dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
         }
         else {
+            Boolean prevStatus = dao.findFirstByName(backend.getName()).active();
             dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
+            Boolean currStatus = dao.findFirstByName(backend.getName()).active();
+            if (!prevStatus.equals(currStatus)) {
+                log.info("Backend cluster %s activation status changed to active=%s (previous status: active=%s).",
+                        backend.getName(), currStatus, prevStatus);
+            }
         }
         return backend;
     }
