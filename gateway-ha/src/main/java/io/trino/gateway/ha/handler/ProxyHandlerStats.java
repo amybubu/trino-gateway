@@ -30,7 +30,6 @@ public final class ProxyHandlerStats
     @Nested
     public CounterStat getRequestCount()
     {
-        System.out.println("AMY INSIDE getRequestCount");
         return requestCount;
     }
 }
