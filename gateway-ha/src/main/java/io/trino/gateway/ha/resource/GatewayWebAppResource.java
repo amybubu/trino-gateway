@@ -15,6 +15,8 @@ package io.trino.gateway.ha.resource;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
+import io.trino.gateway.ha.clustermonitor.BackendsMetricStats;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -67,6 +69,7 @@ import static java.util.Objects.requireNonNullElse;
 @Path("/webapp")
 public class GatewayWebAppResource
 {
+    private static final Logger log = Logger.get(GatewayWebAppResource.class);
     private static final LocalDateTime START_TIME = LocalDateTime.now(ZoneId.systemDefault());
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     private final GatewayBackendManager gatewayBackendManager;
@@ -76,6 +79,7 @@ public class GatewayWebAppResource
     // TODO Avoid putting mutable objects in fields
     private final UIConfiguration uiConfiguration;
     private final RoutingRulesManager routingRulesManager;
+    private final BackendsMetricStats backendsMetricStats;
 
     @Inject
     public GatewayWebAppResource(
@@ -84,7 +88,8 @@ public class GatewayWebAppResource
             BackendStateManager backendStateManager,
             ResourceGroupsManager resourceGroupsManager,
             RoutingRulesManager routingRulesManager,
-            HaGatewayConfiguration configuration)
+            HaGatewayConfiguration configuration,
+            BackendsMetricStats backendsMetricStats)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
@@ -92,6 +97,7 @@ public class GatewayWebAppResource
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.uiConfiguration = configuration.getUiConfiguration();
         this.routingRulesManager = requireNonNull(routingRulesManager, "routingRulesManager is null");
+        this.backendsMetricStats = requireNonNull(backendsMetricStats, "backendsMetricStats is null");
     }
 
     @POST
@@ -191,6 +197,8 @@ public class GatewayWebAppResource
     public Response saveBackend(ProxyBackendConfiguration backend)
     {
         ProxyBackendConfiguration proxyBackendConfiguration = gatewayBackendManager.addBackend(backend);
+        backendsMetricStats.addMetricsForBackend(backend);
+        log.info("Added backend %s and registered its metrics", backend.getName());
         return Response.ok(Result.ok(proxyBackendConfiguration)).build();
     }
 
@@ -212,7 +220,9 @@ public class GatewayWebAppResource
     @Path("/deleteBackend")
     public Response deleteBackend(ProxyBackendConfiguration backend)
     {
+        backendsMetricStats.removeMetricsForBackend(backend.getName());
         ((HaGatewayManager) gatewayBackendManager).deleteBackend(backend.getName());
+        log.info("Removed backend %s and unregistered its metrics", backend.getName());
         return Response.ok(Result.ok(true)).build();
     }
 

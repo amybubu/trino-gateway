@@ -14,6 +14,8 @@
 package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
+import io.trino.gateway.ha.clustermonitor.BackendsMetricStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
@@ -31,12 +33,15 @@ import static java.util.Objects.requireNonNull;
 @Produces(MediaType.APPLICATION_JSON)
 public class HaGatewayResource
 {
+    private static final Logger log = Logger.get(HaGatewayResource.class);
     private final GatewayBackendManager haGatewayManager;
+    private BackendsMetricStats backendsMetricStats;
 
     @Inject
-    public HaGatewayResource(GatewayBackendManager haGatewayManager)
+    public HaGatewayResource(GatewayBackendManager haGatewayManager, BackendsMetricStats backendsMetricStats)
     {
         this.haGatewayManager = requireNonNull(haGatewayManager, "haGatewayManager is null");
+        this.backendsMetricStats = requireNonNull(backendsMetricStats, "backendsMetricStats is null");
     }
 
     @Path("/add")
@@ -44,6 +49,8 @@ public class HaGatewayResource
     public Response addBackend(ProxyBackendConfiguration backend)
     {
         ProxyBackendConfiguration updatedBackend = haGatewayManager.addBackend(backend);
+        backendsMetricStats.addMetricsForBackend(backend);
+        log.info("Added backend %s and registered its metrics", backend.getName());
         return Response.ok(updatedBackend).build();
     }
 
@@ -51,7 +58,12 @@ public class HaGatewayResource
     @POST
     public Response updateBackend(ProxyBackendConfiguration backend)
     {
+        boolean backendExists = haGatewayManager.getBackendByName(backend.getName()).isPresent();
         ProxyBackendConfiguration updatedBackend = haGatewayManager.updateBackend(backend);
+        if (!backendExists) {
+            backendsMetricStats.addMetricsForBackend(updatedBackend);
+            log.info("Registered metrics for new backend %s created via update", backend.getName());
+        }
         return Response.ok(updatedBackend).build();
     }
 
@@ -59,7 +71,9 @@ public class HaGatewayResource
     @POST
     public Response removeBackend(String name)
     {
+        backendsMetricStats.removeMetricsForBackend(name);
         ((HaGatewayManager) haGatewayManager).deleteBackend(name);
+        log.info("Removed backend %s and unregistered its metrics", name);
         return Response.ok().build();
     }
 }
