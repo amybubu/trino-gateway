@@ -27,22 +27,11 @@ public class BackendClusterMetricStats
         this.gatewayBackendManager = gatewayBackendManager;
     }
 
-    public String getClusterName()
-    {
-        return clusterName;
-    }
-
     @Managed
     public int getActivationStatus()
     {
         return gatewayBackendManager.getBackendByName(clusterName)
                 .map(backend -> backend.isActive() ? 1 : 0)
                 .orElse(0);
-    }
-
-    @Managed
-    public int getTestMetric()
-    {
-        return 1;
     }
 }

@@ -18,11 +18,11 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.dao.GatewayBackend;
 import io.trino.gateway.ha.persistence.dao.GatewayBackendDao;
-import java.util.Objects;
 import org.jdbi.v3.core.Jdbi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
