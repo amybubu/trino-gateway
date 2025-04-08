@@ -197,8 +197,8 @@ public class GatewayWebAppResource
     public Response saveBackend(ProxyBackendConfiguration backend)
     {
         ProxyBackendConfiguration proxyBackendConfiguration = gatewayBackendManager.addBackend(backend);
-        backendsMetricStats.addMetricsForBackend(backend);
-        log.info("Added backend %s and registered its metrics", backend.getName());
+        backendsMetricStats.registerBackendMetrics(backend);
+        log.info("Added backend %s", backend.getName());
         return Response.ok(Result.ok(proxyBackendConfiguration)).build();
     }
 
@@ -220,9 +220,9 @@ public class GatewayWebAppResource
     @Path("/deleteBackend")
     public Response deleteBackend(ProxyBackendConfiguration backend)
     {
-        backendsMetricStats.removeMetricsForBackend(backend.getName());
+        backendsMetricStats.unregisterBackendMetrics(backend.getName());
         ((HaGatewayManager) gatewayBackendManager).deleteBackend(backend.getName());
-        log.info("Removed backend %s and unregistered its metrics", backend.getName());
+        log.info("Removed backend %s", backend.getName());
         return Response.ok(Result.ok(true)).build();
     }
 

@@ -42,36 +42,41 @@ public class BackendsMetricStats
     public void init()
     {
         for (ProxyBackendConfiguration backend : gatewayBackendManager.getAllBackends()) {
-            addMetricsForBackend(backend);
+            registerBackendMetrics(backend);
         }
     }
 
-    public void addMetricsForBackend(ProxyBackendConfiguration backend)
+    public void registerBackendMetrics(ProxyBackendConfiguration backend)
     {
         String clusterName = backend.getName();
-        if (!statsMap.containsKey(clusterName)) {
-            BackendClusterMetricStats stats = new BackendClusterMetricStats(clusterName, gatewayBackendManager);
-            statsMap.put(clusterName, stats);
+        BackendClusterMetricStats stats = new BackendClusterMetricStats(clusterName, gatewayBackendManager);
 
+        if (statsMap.putIfAbsent(clusterName, stats) == null) {  // null means the stats didn't exist previously and was inserted
             String metricName = String.format("io.trino.gateway.ha.clustermonitor:type=BackendClusterMetricStats,name=%s", clusterName);
-            exporter.export(metricName, stats);
-            log.info("Registered metrics for cluster: %s", clusterName);
+            try {
+                exporter.export(metricName, stats);
+                log.info("Registered metrics for cluster: %s", clusterName);
+            }
+            catch (Exception e) {
+                statsMap.remove(clusterName);
+                log.error(e, "Failed to register metrics for cluster: %s", clusterName);
+            }
         }
     }
 
-    public void removeMetricsForBackend(String clusterName)
+    public void unregisterBackendMetrics(String clusterName)
     {
-        BackendClusterMetricStats stats = statsMap.get(clusterName);
-        if (stats != null) {
-            String metricName = String.format("io.trino.gateway.ha.clustermonitor:type=BackendClusterMetricStats,name=%s", clusterName);
+        statsMap.computeIfPresent(clusterName, (name, stats) -> {
+            String metricName = String.format("io.trino.gateway.ha.clustermonitor:type=BackendClusterMetricStats,name=%s", name);
             try {
                 exporter.unexport(metricName);
-                statsMap.remove(clusterName);
-                log.info("Unregistered metrics for cluster: %s", clusterName);
+                log.info("Unregistered metrics for cluster: %s", name);
+                return null; // Returning null removes the entry from the map
             }
             catch (Exception e) {
-                log.error(e, "Failed to unregister metrics for cluster: %s", clusterName);
+                log.error(e, "Failed to unregister metrics for cluster: %s", name);
+                return stats; // Keeps the entry in the map if unregistration fails
             }
-        }
+        });
     }
 }

@@ -97,6 +97,7 @@ public class HaGatewayLauncher
         }
         logger.info("Server startup completed in %s", Duration.nanosSince(startTime).convertToMostSuccinctTimeUnit());
         logger.info("======== SERVER STARTED ========");
+        backendsMetricStats.init();
     }
 
     private static void addMessages(StringBuilder output, String type, List<Object> messages)
@@ -122,6 +123,5 @@ public class HaGatewayLauncher
         FlywayMigration.migrate(haGatewayConfiguration.getDataStore());
         List<Module> modules = addModules(haGatewayConfiguration);
         new HaGatewayLauncher().start(modules, haGatewayConfiguration);
-        backendsMetricStats.init();
     }
 }

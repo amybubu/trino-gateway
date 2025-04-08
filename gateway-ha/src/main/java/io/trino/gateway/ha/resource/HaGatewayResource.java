@@ -49,8 +49,8 @@ public class HaGatewayResource
     public Response addBackend(ProxyBackendConfiguration backend)
     {
         ProxyBackendConfiguration updatedBackend = haGatewayManager.addBackend(backend);
-        backendsMetricStats.addMetricsForBackend(backend);
-        log.info("Added backend %s and registered its metrics", backend.getName());
+        backendsMetricStats.registerBackendMetrics(backend);
+        log.info("Added backend %s", backend.getName());
         return Response.ok(updatedBackend).build();
     }
 
@@ -61,7 +61,7 @@ public class HaGatewayResource
         boolean backendExists = haGatewayManager.getBackendByName(backend.getName()).isPresent();
         ProxyBackendConfiguration updatedBackend = haGatewayManager.updateBackend(backend);
         if (!backendExists) {
-            backendsMetricStats.addMetricsForBackend(updatedBackend);
+            backendsMetricStats.registerBackendMetrics(updatedBackend);
             log.info("Registered metrics for new backend %s created via update", backend.getName());
         }
         return Response.ok(updatedBackend).build();
@@ -71,9 +71,9 @@ public class HaGatewayResource
     @POST
     public Response removeBackend(String name)
     {
-        backendsMetricStats.removeMetricsForBackend(name);
+        backendsMetricStats.unregisterBackendMetrics(name);
         ((HaGatewayManager) haGatewayManager).deleteBackend(name);
-        log.info("Removed backend %s and unregistered its metrics", name);
+        log.info("Removed backend %s", name);
         return Response.ok().build();
     }
 }

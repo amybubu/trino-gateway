@@ -99,8 +99,8 @@ public class EntityEditorResource
                     ProxyBackendConfiguration backend =
                             OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
                     gatewayBackendManager.updateBackend(backend);
-                    backendsMetricStats.addMetricsForBackend(backend);
-                    log.info("Added/Updated backend %s and registered its metrics", backend.getName());
+                    backendsMetricStats.registerBackendMetrics(backend);
+                    log.info("Added/Updated backend %s", backend.getName());
 
                     log.info("Marking the cluster %s %s", backend.getName(), backend.isActive() ? "active" : "inactive");
                     // We mark Trino PENDING here so gateway won't immediately route traffic to this cluster yet
