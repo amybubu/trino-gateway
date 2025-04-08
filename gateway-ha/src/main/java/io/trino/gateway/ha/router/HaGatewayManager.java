@@ -18,6 +18,7 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.dao.GatewayBackend;
 import io.trino.gateway.ha.persistence.dao.GatewayBackendDao;
+import java.util.Objects;
 import org.jdbi.v3.core.Jdbi;
 
 import java.util.ArrayList;
@@ -119,7 +120,7 @@ public class HaGatewayManager
             Boolean prevStatus = dao.findFirstByName(backend.getName()).active();
             dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
             Boolean currStatus = dao.findFirstByName(backend.getName()).active();
-            if (!prevStatus.equals(currStatus)) {
+            if (!Objects.equals(prevStatus, currStatus)) {
                 log.info("Backend cluster %s activation status changed to active=%s (previous status: active=%s).",
                         backend.getName(), currStatus, prevStatus);
             }
