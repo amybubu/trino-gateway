@@ -52,9 +52,8 @@ public class BackendsMetricStats
         BackendClusterMetricStats stats = new BackendClusterMetricStats(clusterName, gatewayBackendManager);
 
         if (statsMap.putIfAbsent(clusterName, stats) == null) {  // null means the stats didn't exist previously and was inserted
-            String metricName = String.format("io.trino.gateway.ha.clustermonitor:type=BackendClusterMetricStats,name=%s", clusterName);
             try {
-                exporter.export(metricName, stats);
+                exporter.exportWithGeneratedName(stats, BackendClusterMetricStats.class, clusterName);
                 log.info("Registered metrics for cluster: %s", clusterName);
             }
             catch (Exception e) {
@@ -67,9 +66,8 @@ public class BackendsMetricStats
     public void unregisterBackendMetrics(String clusterName)
     {
         statsMap.computeIfPresent(clusterName, (name, stats) -> {
-            String metricName = String.format("io.trino.gateway.ha.clustermonitor:type=BackendClusterMetricStats,name=%s", name);
             try {
-                exporter.unexport(metricName);
+                exporter.unexportWithGeneratedName(BackendClusterMetricStats.class, name);
                 log.info("Unregistered metrics for cluster: %s", name);
                 return null; // Returning null removes the entry from the map
             }
