@@ -16,7 +16,6 @@ package io.trino.gateway.ha;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Injector;
 import com.google.inject.Module;
 import io.airlift.bootstrap.ApplicationConfigurationException;
 import io.airlift.bootstrap.Bootstrap;
@@ -32,7 +31,6 @@ import io.airlift.openmetrics.JmxOpenMetricsModule;
 import io.airlift.tracing.TracingModule;
 import io.airlift.units.Duration;
 import io.trino.gateway.baseapp.BaseApp;
-import io.trino.gateway.ha.clustermonitor.BackendsMetricStats;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.module.HaGatewayProviderModule;
 import io.trino.gateway.ha.persistence.FlywayMigration;
@@ -50,8 +48,6 @@ import static java.util.Objects.requireNonNullElse;
 public class HaGatewayLauncher
 {
     private static final Logger logger = Logger.get(HaGatewayLauncher.class);
-    private static Injector injector;
-    private static BackendsMetricStats backendsMetricStats;
 
     private void start(List<Module> additionalModules, HaGatewayConfiguration configuration)
     {
@@ -77,8 +73,7 @@ public class HaGatewayLauncher
         Bootstrap app = new Bootstrap(modules.build())
                 .setRequiredConfigurationProperties(configuration.getServerConfig());
         try {
-            injector = app.initialize();
-            backendsMetricStats = injector.getInstance(BackendsMetricStats.class);
+            app.initialize();
         }
         catch (ApplicationConfigurationException e) {
             StringBuilder message = new StringBuilder();
@@ -97,7 +92,6 @@ public class HaGatewayLauncher
         }
         logger.info("Server startup completed in %s", Duration.nanosSince(startTime).convertToMostSuccinctTimeUnit());
         logger.info("======== SERVER STARTED ========");
-        backendsMetricStats.init();
     }
 
     private static void addMessages(StringBuilder output, String type, List<Object> messages)

@@ -50,7 +50,7 @@ public class HaGatewayResource
     {
         ProxyBackendConfiguration updatedBackend = haGatewayManager.addBackend(backend);
         backendsMetricStats.registerBackendMetrics(backend);
-        log.info("Added backend %s", backend.getName());
+        log.info("Added backend %s and registered its metrics", backend.getName());
         return Response.ok(updatedBackend).build();
     }
 
@@ -73,7 +73,7 @@ public class HaGatewayResource
     {
         backendsMetricStats.unregisterBackendMetrics(name);
         ((HaGatewayManager) haGatewayManager).deleteBackend(name);
-        log.info("Removed backend %s", name);
+        log.info("Removed backend %s and unregistered its metrics", name);
         return Response.ok().build();
     }
 }
