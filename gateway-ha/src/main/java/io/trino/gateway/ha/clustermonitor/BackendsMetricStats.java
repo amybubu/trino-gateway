@@ -21,20 +21,19 @@ import io.trino.gateway.ha.router.GatewayBackendManager;
 import org.weakref.jmx.MBeanExporter;
 import org.weakref.jmx.Managed;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import org.weakref.jmx.Nested;
+
 
 @Singleton
 public class BackendsMetricStats
 {
     private static final Logger log = Logger.get(BackendsMetricStats.class);
 
-    private final Map<String, BackendClusterMetricStats> statsMap = new ConcurrentHashMap<>();
     private final MBeanExporter exporter;
     private final GatewayBackendManager gatewayBackendManager;
+    private Map<String, BackendClusterMetricStats> statsMap = new ConcurrentHashMap<>();
 
     @Inject
     public BackendsMetricStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter)
@@ -45,23 +44,19 @@ public class BackendsMetricStats
 
     public void init()
     {
-        // Get current backends from DB
-        List<ProxyBackendConfiguration> currentBackends = gatewayBackendManager.getAllBackends();
-        Set<String> currentBackendNames = currentBackends
-                .stream()
-                .map(ProxyBackendConfiguration::getName)
-                .collect(Collectors.toSet());
-
-        // Remove metrics for backends that no longer exist
-        Set<String> staleClusters = statsMap.keySet()
-                .stream()
-                .filter(name -> !currentBackendNames.contains(name))
-                .collect(Collectors.toSet());
-
-        for (String staleCluster : staleClusters) {
-            unregisterBackendMetrics(staleCluster);
+        // Unregister all backend metrics
+        for (BackendClusterMetricStats stats : statsMap.values()) {
+            String name = stats.getClusterName();
+            try {
+                exporter.unexportWithGeneratedName(BackendClusterMetricStats.class, name);
+                log.info("Unregistered metrics for cluster: %s", name);
+            }
+            catch (Exception e) {
+                log.error(e, "Failed to unregister metrics for cluster: %s", name);
+            }
         }
 
+        statsMap = new ConcurrentHashMap<>();
         // Register metrics for current backends
         for (ProxyBackendConfiguration backend : gatewayBackendManager.getAllBackends()) {
             registerBackendMetrics(backend);
@@ -83,21 +78,6 @@ public class BackendsMetricStats
                 log.error(e, "Failed to register metrics for cluster: %s", clusterName);
             }
         }
-    }
-
-    public void unregisterBackendMetrics(String clusterName)
-    {
-        statsMap.computeIfPresent(clusterName, (name, stats) -> {
-            try {
-                exporter.unexportWithGeneratedName(BackendClusterMetricStats.class, name);
-                log.info("Unregistered metrics for cluster: %s", name);
-                return null; // Returning null removes the entry from the map
-            }
-            catch (Exception e) {
-                log.error(e, "Failed to unregister metrics for cluster: %s", name);
-                return stats; // Keeps the entry in the map if unregistration fails
-            }
-        });
     }
 
     @Managed

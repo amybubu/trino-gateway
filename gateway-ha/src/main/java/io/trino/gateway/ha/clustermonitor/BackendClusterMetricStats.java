@@ -27,6 +27,11 @@ public class BackendClusterMetricStats
         this.gatewayBackendManager = gatewayBackendManager;
     }
 
+    public String getClusterName()
+    {
+        return clusterName;
+    }
+
     @Managed
     public int getActivationStatus()
     {
