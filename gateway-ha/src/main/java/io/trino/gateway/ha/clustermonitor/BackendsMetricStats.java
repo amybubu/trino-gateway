@@ -19,9 +19,13 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import org.weakref.jmx.MBeanExporter;
+import org.weakref.jmx.Managed;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Singleton
 public class BackendsMetricStats
@@ -41,6 +45,24 @@ public class BackendsMetricStats
 
     public void init()
     {
+        // Get current backends from DB
+        List<ProxyBackendConfiguration> currentBackends = gatewayBackendManager.getAllBackends();
+        Set<String> currentBackendNames = currentBackends
+                .stream()
+                .map(ProxyBackendConfiguration::getName)
+                .collect(Collectors.toSet());
+
+        // Remove metrics for backends that no longer exist
+        Set<String> staleClusters = statsMap.keySet()
+                .stream()
+                .filter(name -> !currentBackendNames.contains(name))
+                .collect(Collectors.toSet());
+
+        for (String staleCluster : staleClusters) {
+            unregisterBackendMetrics(staleCluster);
+        }
+
+        // Register metrics for current backends
         for (ProxyBackendConfiguration backend : gatewayBackendManager.getAllBackends()) {
             registerBackendMetrics(backend);
         }
@@ -76,5 +98,12 @@ public class BackendsMetricStats
                 return stats; // Keeps the entry in the map if unregistration fails
             }
         });
+    }
+
+    @Managed
+    public void refreshOnJmxAccess()
+    {
+        log.info("JMX endpoint accessed, refreshing backend metrics");
+        init();
     }
 }

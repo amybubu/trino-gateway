@@ -18,7 +18,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
-import io.trino.gateway.ha.clustermonitor.BackendsMetricStats;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -57,21 +56,18 @@ public class EntityEditorResource
     private final ResourceGroupsManager resourceGroupsManager;
     private final RoutingManager routingManager;
     private final BackendStateManager backendStateManager;
-    private final BackendsMetricStats backendsMetricStats;
 
     @Inject
     public EntityEditorResource(
             GatewayBackendManager gatewayBackendManager,
             ResourceGroupsManager resourceGroupsManager,
             RoutingManager routingManager,
-            BackendStateManager backendStateManager,
-            BackendsMetricStats backendsMetricStats)
+            BackendStateManager backendStateManager)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
-        this.backendsMetricStats = requireNonNull(backendsMetricStats, "backendsMetricStats is null");
     }
 
     @GET
@@ -99,9 +95,6 @@ public class EntityEditorResource
                     ProxyBackendConfiguration backend =
                             OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
                     gatewayBackendManager.updateBackend(backend);
-                    backendsMetricStats.registerBackendMetrics(backend);
-                    log.info("Added/Updated backend %s and registered its metrics", backend.getName());
-
                     log.info("Marking the cluster %s %s", backend.getName(), backend.isActive() ? "active" : "inactive");
                     // We mark Trino PENDING here so gateway won't immediately route traffic to this cluster yet
                     // until it is marked healthy by the healthcheck

@@ -32,6 +32,6 @@ public class BackendClusterMetricStats
     {
         return gatewayBackendManager.getBackendByName(clusterName)
                 .map(backend -> backend.isActive() ? 1 : 0)
-                .orElse(0);
+                .orElse(-1);
     }
 }
