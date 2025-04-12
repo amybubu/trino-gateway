@@ -18,22 +18,28 @@ import com.google.inject.Singleton;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.weakref.jmx.MBeanExporter;
-import org.weakref.jmx.Managed;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.weakref.jmx.Nested;
-
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Singleton
 public class BackendsMetricStats
 {
     private static final Logger log = Logger.get(BackendsMetricStats.class);
+    private static final int METRIC_REFRESH_SECONDS = 30;
 
     private final MBeanExporter exporter;
     private final GatewayBackendManager gatewayBackendManager;
     private Map<String, BackendClusterMetricStats> statsMap = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
     @Inject
     public BackendsMetricStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter)
@@ -42,30 +48,57 @@ public class BackendsMetricStats
         this.exporter = exporter;
     }
 
-    public void init()
+    @PostConstruct
+    public void start()
     {
-        // Unregister all backend metrics
-        for (BackendClusterMetricStats stats : statsMap.values()) {
-            String name = stats.getClusterName();
+        log.info("Running periodic metric refresh with interval of %d seconds", METRIC_REFRESH_SECONDS);
+        scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
-                exporter.unexportWithGeneratedName(BackendClusterMetricStats.class, name);
-                log.info("Unregistered metrics for cluster: %s", name);
+                initMetrics();
             }
             catch (Exception e) {
-                log.error(e, "Failed to unregister metrics for cluster: %s", name);
+                log.error(e, "Error refreshing backend metrics");
+            }
+        }, 0, METRIC_REFRESH_SECONDS, TimeUnit.SECONDS);
+    }
+
+    @PreDestroy
+    public void stop()
+    {
+        scheduledExecutor.shutdownNow();
+    }
+
+    public void initMetrics()
+    {
+        // Get current backends from DB
+        Set<String> currentBackends = gatewayBackendManager.getAllBackends().stream()
+                .map(ProxyBackendConfiguration::getName)
+                .collect(Collectors.toSet());
+
+        // Unregister metrics for removed backends
+        for (String registeredBackend : statsMap.keySet()) {
+            if (!currentBackends.contains(registeredBackend)) {
+                try {
+                    exporter.unexportWithGeneratedName(BackendClusterMetricStats.class, registeredBackend);
+                    log.info("Unregistered metrics for removed cluster: %s", registeredBackend);
+                    statsMap.remove(registeredBackend);
+                }
+                catch (Exception e) {
+                    log.error(e, "Failed to unregister metrics for cluster: %s", registeredBackend);
+                }
             }
         }
 
-        statsMap = new ConcurrentHashMap<>();
-        // Register metrics for current backends
-        for (ProxyBackendConfiguration backend : gatewayBackendManager.getAllBackends()) {
-            registerBackendMetrics(backend);
+        // Register metrics for added backends
+        for (String backend : currentBackends) {
+            if (!statsMap.containsKey(backend)) {
+                registerBackendMetrics(backend);
+            }
         }
     }
 
-    public void registerBackendMetrics(ProxyBackendConfiguration backend)
+    public void registerBackendMetrics(String clusterName)
     {
-        String clusterName = backend.getName();
         BackendClusterMetricStats stats = new BackendClusterMetricStats(clusterName, gatewayBackendManager);
 
         if (statsMap.putIfAbsent(clusterName, stats) == null) {  // null means the stats didn't exist previously and was inserted
@@ -78,12 +111,5 @@ public class BackendsMetricStats
                 log.error(e, "Failed to register metrics for cluster: %s", clusterName);
             }
         }
-    }
-
-    @Managed
-    public void refreshOnJmxAccess()
-    {
-        log.info("JMX endpoint accessed, refreshing backend metrics");
-        init();
     }
 }

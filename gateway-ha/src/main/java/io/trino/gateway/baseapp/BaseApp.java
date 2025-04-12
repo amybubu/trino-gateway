@@ -20,7 +20,6 @@ import com.google.inject.Scopes;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
-import io.trino.gateway.ha.clustermonitor.JmxRequestInterceptor;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.RoutingTargetHandler;
@@ -147,7 +146,6 @@ public class BaseApp
         binder.bind(ProxyHandlerStats.class).in(Scopes.SINGLETON);
         newExporter(binder).export(ProxyHandlerStats.class).withGeneratedName();
         binder.bind(RoutingRulesManager.class);
-        jaxrsBinder(binder).bind(JmxRequestInterceptor.class);
     }
 
     private static void addManagedApps(HaGatewayConfiguration configuration, Binder binder)

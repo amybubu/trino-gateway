@@ -74,7 +74,7 @@ public class RouterBaseModule
     public BackendsMetricStats getBackendsMetricStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter)
     {
         BackendsMetricStats backendsMetricStats = new BackendsMetricStats(gatewayBackendManager, exporter);
-        backendsMetricStats.init();
+        backendsMetricStats.initMetrics();
         return backendsMetricStats;
     }
 }
