@@ -18,6 +18,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.trino.gateway.ha.clustermonitor.BackendsMetricStats;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
@@ -71,9 +72,9 @@ public class RouterBaseModule
 
     @Provides
     @Singleton
-    public BackendsMetricStats getBackendsMetricStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter)
+    public BackendsMetricStats getBackendsMetricStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter, MonitorConfiguration monitorConfiguration)
     {
-        BackendsMetricStats backendsMetricStats = new BackendsMetricStats(gatewayBackendManager, exporter);
+        BackendsMetricStats backendsMetricStats = new BackendsMetricStats(gatewayBackendManager, exporter, monitorConfiguration);
         backendsMetricStats.initMetrics();
         return backendsMetricStats;
     }

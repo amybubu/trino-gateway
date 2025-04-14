@@ -16,6 +16,7 @@ package io.trino.gateway.ha.clustermonitor;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import jakarta.annotation.PostConstruct;
@@ -34,24 +35,27 @@ import java.util.stream.Collectors;
 public class BackendsMetricStats
 {
     private static final Logger log = Logger.get(BackendsMetricStats.class);
-    private static final int METRIC_REFRESH_SECONDS = 30;
+    public static final int DEFAULT_METRIC_REFRESH_SECONDS = 30;
 
     private final MBeanExporter exporter;
     private final GatewayBackendManager gatewayBackendManager;
+    private final MonitorConfiguration monitorConfiguration;
     private Map<String, BackendClusterMetricStats> statsMap = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
     @Inject
-    public BackendsMetricStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter)
+    public BackendsMetricStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter, MonitorConfiguration monitorConfiguration)
     {
         this.gatewayBackendManager = gatewayBackendManager;
         this.exporter = exporter;
+        this.monitorConfiguration = monitorConfiguration;
     }
 
     @PostConstruct
     public void start()
     {
-        log.info("Running periodic metric refresh with interval of %d seconds", METRIC_REFRESH_SECONDS);
+        int refreshSeconds = monitorConfiguration.getMetricRefreshSeconds();
+        log.info("Running periodic metric refresh with interval of %d seconds", refreshSeconds);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
                 initMetrics();
@@ -59,7 +63,7 @@ public class BackendsMetricStats
             catch (Exception e) {
                 log.error(e, "Error refreshing backend metrics");
             }
-        }, 0, METRIC_REFRESH_SECONDS, TimeUnit.SECONDS);
+        }, 0, refreshSeconds, TimeUnit.SECONDS);
     }
 
     @PreDestroy
