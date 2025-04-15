@@ -15,6 +15,7 @@ package io.trino.gateway.ha.module;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import io.trino.gateway.ha.clustermonitor.BackendsMetricStats;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
@@ -40,6 +41,12 @@ public class RouterBaseModule
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi);
         queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
+    }
+
+    @Override
+    protected void configure()
+    {
+        bind(BackendsMetricStats.class);
     }
 
     @Provides
