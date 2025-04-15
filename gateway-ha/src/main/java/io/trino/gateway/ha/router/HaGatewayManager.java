@@ -22,7 +22,6 @@ import org.jdbi.v3.core.Jdbi;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -83,19 +82,13 @@ public class HaGatewayManager
     @Override
     public void deactivateBackend(String backendName)
     {
-        Boolean prevStatus = dao.findFirstByName(backendName).active();
         dao.deactivate(backendName);
-        log.info("Backend cluster %s has been deactivated (previous status: active=%s).",
-                backendName, prevStatus);
     }
 
     @Override
     public void activateBackend(String backendName)
     {
-        Boolean prevStatus = dao.findFirstByName(backendName).active();
         dao.activate(backendName);
-        log.info("Backend cluster %s has been activated (previous status: active=%s).",
-                backendName, prevStatus);
     }
 
     @Override
@@ -117,13 +110,7 @@ public class HaGatewayManager
             dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
         }
         else {
-            Boolean prevStatus = dao.findFirstByName(backend.getName()).active();
             dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
-            Boolean currStatus = dao.findFirstByName(backend.getName()).active();
-            if (!Objects.equals(prevStatus, currStatus)) {
-                log.info("Backend cluster %s activation status changed to active=%s (previous status: active=%s).",
-                        backend.getName(), currStatus, prevStatus);
-            }
         }
         return backend;
     }

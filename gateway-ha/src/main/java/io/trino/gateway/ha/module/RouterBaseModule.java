@@ -15,10 +15,8 @@ package io.trino.gateway.ha.module;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import io.trino.gateway.ha.clustermonitor.BackendsMetricStats;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
-import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
@@ -27,7 +25,6 @@ import io.trino.gateway.ha.router.HaResourceGroupsManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import org.jdbi.v3.core.Jdbi;
-import org.weakref.jmx.MBeanExporter;
 
 public class RouterBaseModule
         extends AbstractModule
@@ -44,6 +41,12 @@ public class RouterBaseModule
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi);
         queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
+    }
+
+    @Override
+    protected void configure()
+    {
+        bind(BackendsMetricStats.class);
     }
 
     @Provides
@@ -68,14 +71,5 @@ public class RouterBaseModule
     public QueryHistoryManager getQueryHistoryManager()
     {
         return this.queryHistoryManager;
-    }
-
-    @Provides
-    @Singleton
-    public BackendsMetricStats getBackendsMetricStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter, MonitorConfiguration monitorConfiguration)
-    {
-        BackendsMetricStats backendsMetricStats = new BackendsMetricStats(gatewayBackendManager, exporter, monitorConfiguration);
-        backendsMetricStats.initMetrics();
-        return backendsMetricStats;
     }
 }

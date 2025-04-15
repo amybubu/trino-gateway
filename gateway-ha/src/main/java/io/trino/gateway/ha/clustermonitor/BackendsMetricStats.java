@@ -16,6 +16,7 @@ package io.trino.gateway.ha.clustermonitor;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.airlift.log.Logger;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
@@ -23,24 +24,27 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.weakref.jmx.MBeanExporter;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 @Singleton
 public class BackendsMetricStats
 {
     private static final Logger log = Logger.get(BackendsMetricStats.class);
-    public static final int DEFAULT_METRIC_REFRESH_SECONDS = 30;
+    public static final Duration DEFAULT_BACKEND_METRICS_REGISTRY_REFRESH_PERIOD = new Duration(30, SECONDS);
 
     private final MBeanExporter exporter;
     private final GatewayBackendManager gatewayBackendManager;
     private final MonitorConfiguration monitorConfiguration;
-    private Map<String, BackendClusterMetricStats> statsMap = new ConcurrentHashMap<>();
+    // MBeanExporter uses weak references, so statsMap is needed to maintain strong references to metric objects to prevent garbage collection
+    private final Map<String, BackendClusterMetricStats> statsMap = new HashMap<>();
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
     @Inject
@@ -54,16 +58,16 @@ public class BackendsMetricStats
     @PostConstruct
     public void start()
     {
-        int refreshSeconds = monitorConfiguration.getMetricRefreshSeconds();
-        log.info("Running periodic metric refresh with interval of %d seconds", refreshSeconds);
+        Duration refreshInterval = monitorConfiguration.getBackendMetricsRegistryRefreshPeriod();
+        log.info("Running periodic metric refresh with interval of %s", refreshInterval);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
-                initMetrics();
+                updateMetrics();
             }
             catch (Exception e) {
                 log.error(e, "Error refreshing backend metrics");
             }
-        }, 0, refreshSeconds, TimeUnit.SECONDS);
+        }, 0, refreshInterval.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     @PreDestroy
@@ -72,7 +76,7 @@ public class BackendsMetricStats
         scheduledExecutor.shutdownNow();
     }
 
-    public void initMetrics()
+    public synchronized void updateMetrics()
     {
         // Get current backends from DB
         Set<String> currentBackends = gatewayBackendManager.getAllBackends().stream()
@@ -101,7 +105,7 @@ public class BackendsMetricStats
         }
     }
 
-    public void registerBackendMetrics(String clusterName)
+    public synchronized void registerBackendMetrics(String clusterName)
     {
         BackendClusterMetricStats stats = new BackendClusterMetricStats(clusterName, gatewayBackendManager);
 
