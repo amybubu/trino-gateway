@@ -84,11 +84,16 @@ public class HaGatewayManager
     public void deactivateBackend(String backendName)
     {
         GatewayBackend model = dao.findFirstByName(backendName);
-        if (model != null) {
-            Boolean prevStatus = model.active();
-            dao.deactivate(backendName);
-            log.info("Backend cluster %s has been deactivated (previous status: active=%s).",
-                    backendName, prevStatus);
+        if (model == null) {
+            throw new IllegalStateException("No backend found with name: " + backendName + ", could not deactivate");
+        }
+
+        Boolean prevStatus = model.active();
+        dao.deactivate(backendName);
+        Boolean currStatus = dao.findFirstByName(backendName).active();
+        if (!Objects.equals(prevStatus, currStatus)) {
+            log.info("Backend cluster %s activation status changed to active=%s (previous status: active=%s).",
+                    backendName, currStatus, prevStatus);
         }
     }
 
@@ -96,11 +101,16 @@ public class HaGatewayManager
     public void activateBackend(String backendName)
     {
         GatewayBackend model = dao.findFirstByName(backendName);
-        if (model != null) {
-            Boolean prevStatus = model.active();
-            dao.activate(backendName);
-            log.info("Backend cluster %s has been activated (previous status: active=%s).",
-                    backendName, prevStatus);
+        if (model == null) {
+            throw new IllegalStateException("No backend found with name: " + backendName + ", could not activate");
+        }
+
+        Boolean prevStatus = model.active();
+        dao.activate(backendName);
+        Boolean currStatus = dao.findFirstByName(backendName).active();
+        if (!Objects.equals(prevStatus, currStatus)) {
+            log.info("Backend cluster %s activation status changed to active=%s (previous status: active=%s).",
+                    backendName, currStatus, prevStatus);
         }
     }
 
