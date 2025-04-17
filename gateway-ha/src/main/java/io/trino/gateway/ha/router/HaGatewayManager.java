@@ -83,29 +83,32 @@ public class HaGatewayManager
     @Override
     public void deactivateBackend(String backendName)
     {
-        updateBackendActivationStatus(backendName, () -> dao.deactivate(backendName));
+        updateBackendActivationStatus(backendName, false, () -> dao.deactivate(backendName));
     }
 
     @Override
     public void activateBackend(String backendName)
     {
-        updateBackendActivationStatus(backendName, () -> dao.activate(backendName));
+        updateBackendActivationStatus(backendName, true, () -> dao.activate(backendName));
     }
 
-    private void updateBackendActivationStatus(String backendName, Runnable action)
+    private void updateBackendActivationStatus(String clusterName, boolean newStatus, Runnable action)
     {
-        GatewayBackend model = dao.findFirstByName(backendName);
+        GatewayBackend model = dao.findFirstByName(clusterName);
         if (model == null) {
-            throw new IllegalStateException("No backend found with name: " + backendName + ", could not (de)activate");
+            throw new IllegalStateException("No cluster found with name: " + clusterName + ", could not (de)activate");
         }
 
         Boolean prevStatus = model.active();
         action.run();
-        Boolean currStatus = dao.findFirstByName(backendName).active();
+        logActivationStatusChange(clusterName, newStatus, prevStatus);
+    }
 
-        if (!Objects.equals(prevStatus, currStatus)) {
-            log.info("Backend cluster %s activation status changed to active=%s (previous status: active=%s).",
-                    backendName, currStatus, prevStatus);
+    private void logActivationStatusChange(String clusterName, boolean newStatus, boolean prevStatus)
+    {
+        if (!Objects.equals(prevStatus, newStatus)) {
+            log.info("Backend cluster %s activation status set to active=%s (previous status: active=%s).",
+                    clusterName, newStatus, prevStatus);
         }
     }
 
@@ -131,10 +134,7 @@ public class HaGatewayManager
             Boolean prevStatus = model.active();
             dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
             Boolean currStatus = backend.isActive();
-            if (!Objects.equals(prevStatus, currStatus)) {
-                log.info("Backend cluster %s activation status changed to active=%s (previous status: active=%s).",
-                        backend.getName(), currStatus, prevStatus);
-            }
+            logActivationStatusChange(backend.getName(), currStatus, prevStatus);
         }
         return backend;
     }
