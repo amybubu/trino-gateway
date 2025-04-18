@@ -22,7 +22,6 @@ import org.jdbi.v3.core.Jdbi;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -99,14 +98,14 @@ public class HaGatewayManager
             throw new IllegalStateException("No cluster found with name: " + clusterName + ", could not (de)activate");
         }
 
-        Boolean prevStatus = model.active();
+        boolean prevStatus = model.active();
         action.run();
         logActivationStatusChange(clusterName, newStatus, prevStatus);
     }
 
     private void logActivationStatusChange(String clusterName, boolean newStatus, boolean prevStatus)
     {
-        if (!Objects.equals(prevStatus, newStatus)) {
+        if (prevStatus != newStatus) {
             log.info("Backend cluster %s activation status set to active=%s (previous status: active=%s).",
                     clusterName, newStatus, prevStatus);
         }
@@ -131,10 +130,8 @@ public class HaGatewayManager
             dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
         }
         else {
-            Boolean prevStatus = model.active();
             dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
-            Boolean currStatus = backend.isActive();
-            logActivationStatusChange(backend.getName(), currStatus, prevStatus);
+            logActivationStatusChange(backend.getName(), backend.isActive(), model.active());
         }
         return backend;
     }
